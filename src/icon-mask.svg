@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" focusable="false" aria-hidden="true">
+  <!-- Minus (left) and Plus (right) — fill viewBox -->
+  <path fill="currentColor" fill-rule="evenodd" d="
+    M64 232 H224 V280 H64 Z
+    M288 232 H448 V280 H288 Z
+    M336 80 H376 V432 H336 Z
+  "/>
+</svg>

@@ -1,0 +1,101 @@
+{% extends "_layouts/cp" %}
+{% import "_includes/forms" as forms %}
+
+{% set title = "Content Diff Settings"|t('craft-content-diff') %}
+{% set selectedSubnavItem = 'settings' %}
+
+{% block content %}
+    <form method="post" accept-charset="UTF-8" id="content-diff-settings-form">
+        {{ csrfInput() }}
+        {{ actionInput('craft-content-diff/settings/save-settings') }}
+        {{ redirectInput('craft-content-diff/settings') }}
+
+        {{ forms.autosuggestField({
+            first: true,
+            label: 'API key'|t('craft-content-diff'),
+            name: 'settings[apiKey]',
+            instructions: 'Secret token for the diff endpoint. Use the same value on every environment. Use a literal or env var alias (e.g. $CONTENT_DIFF_API_KEY). Generate below and copy into this field or .env, then Save.'|t('craft-content-diff'),
+            value: settings.apiKey,
+            suggestEnvVars: true,
+        }) }}
+        <div class="input ltr" style="margin-top: 0.5rem;">
+            <button type="button" class="btn" id="content-diff-generate-api-key">{{ "Generate API key"|t('craft-content-diff') }}</button>
+            <div id="content-diff-generated-key-wrap" style="margin-top: 0.75rem; display: none;">
+                <span class="light">{{ "Generated key:"|t('craft-content-diff') }}</span>
+                <code id="content-diff-generated-key" style="display: block; margin-top: 0.25rem; padding: 0.5rem; background: #f3f4f6; border-radius: 4px; font-size: 13px; word-break: break-all; user-select: all;"></code>
+            </div>
+        </div>
+
+        {{ forms.autosuggestField({
+            label: 'Production URL'|t('craft-content-diff'),
+            name: 'settings[productionUrl]',
+            instructions: 'Full base URL of the production site (e.g. https://example.com). Use a literal or an env var alias (e.g. $CONTENT_DIFF_PRODUCTION_URL).',
+            value: settings.productionUrl,
+            suggestEnvVars: true,
+        }) }}
+
+        {{ forms.autosuggestField({
+            label: 'Staging URL'|t('craft-content-diff'),
+            name: 'settings[stagingUrl]',
+            instructions: 'Full base URL of the staging site (e.g. https://staging.example.com). Use a literal or an env var alias (e.g. $CONTENT_DIFF_STAGING_URL).',
+            value: settings.stagingUrl,
+            suggestEnvVars: true,
+        }) }}
+
+        {{ forms.autosuggestField({
+            label: 'Staging HTTP user'|t('craft-content-diff'),
+            name: 'settings[stagingHttpUser]',
+            instructions: 'Optional. HTTP Basic auth username when staging is behind server-level auth. Use a literal or env var alias (e.g. $CONTENT_DIFF_STAGING_HTTP_USER).',
+            value: settings.stagingHttpUser,
+            suggestEnvVars: true,
+        }) }}
+
+        {{ forms.autosuggestField({
+            label: 'Staging HTTP password'|t('craft-content-diff'),
+            name: 'settings[stagingHttpPassword]',
+            instructions: 'Optional. HTTP Basic auth password for staging. Use a literal or env var alias (e.g. $CONTENT_DIFF_STAGING_HTTP_PASSWORD). Leave blank to keep existing value.'|t('craft-content-diff'),
+            value: settings.stagingHttpPassword,
+            suggestEnvVars: true,
+        }) }}
+
+        {{ forms.autosuggestField({
+            label: 'Production HTTP user'|t('craft-content-diff'),
+            name: 'settings[productionHttpUser]',
+            instructions: 'Optional. HTTP Basic auth username when production is behind server-level auth. Use a literal or env var alias (e.g. $CONTENT_DIFF_PRODUCTION_HTTP_USER).',
+            value: settings.productionHttpUser,
+            suggestEnvVars: true,
+        }) }}
+
+        {{ forms.autosuggestField({
+            label: 'Production HTTP password'|t('craft-content-diff'),
+            name: 'settings[productionHttpPassword]',
+            instructions: 'Optional. HTTP Basic auth password for production. Use a literal or env var alias (e.g. $CONTENT_DIFF_PRODUCTION_HTTP_PASSWORD). Leave blank to keep existing value.'|t('craft-content-diff'),
+            value: settings.productionHttpPassword,
+            suggestEnvVars: true,
+        }) }}
+
+        <div class="buttons">
+            <input type="submit" class="btn submit" value="{{ 'Save'|t('craft-content-diff') }}">
+        </div>
+    </form>
+
+    <script>
+        (function() {
+            var btn = document.getElementById('content-diff-generate-api-key');
+            var wrap = document.getElementById('content-diff-generated-key-wrap');
+            var span = document.getElementById('content-diff-generated-key');
+            if (!btn || !wrap || !span) return;
+            btn.addEventListener('click', function() {
+                var bytes = new Uint8Array(32);
+                if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+                    crypto.getRandomValues(bytes);
+                } else {
+                    for (var i = 0; i < 32; i++) bytes[i] = Math.floor(Math.random() * 256);
+                }
+                var key = Array.from(bytes, function(b) { return ('0' + b.toString(16)).slice(-2); }).join('');
+                span.textContent = key;
+                wrap.style.display = 'block';
+            });
+        })();
+    </script>
+{% endblock %}

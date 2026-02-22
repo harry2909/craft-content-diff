@@ -1,0 +1,141 @@
+{% extends "_layouts/cp" %}
+
+{% set title = "Content Diff"|t('craft-content-diff') %}
+{% set selectedSubnavItem = 'dashboard' %}
+
+{% block content %}
+    <div class="content-diff-dashboard">
+        <div class="content-diff-env" style="margin-bottom: 28px;">
+            <span class="content-diff-env-label" style="color: #6b7280; font-size: 13px; font-weight: 500; margin-right: 10px;">{{ "Current environment"|t('craft-content-diff') }}</span>
+            <span class="content-diff-env-badge" style="display: inline-block; padding: 6px 14px; background: #e5e7eb; color: #374151; font-size: 13px; font-weight: 600; border-radius: 20px; text-transform: capitalize; letter-spacing: 0.02em;">{{ currentEnvironment }}</span>
+            <a href="{{ diffJsonUrl }}" target="_blank" rel="noopener" class="btn small" style="margin-left: 12px;">{{ "View JSON"|t('craft-content-diff') }}</a>
+        </div>
+
+        {% if compareTargets|length %}
+            <p class="content-diff-intro" style="color: #6b7280; font-size: 14px; margin: 0 0 20px 0; line-height: 1.5;">{{ "Compare this site’s content with another environment."|t('craft-content-diff') }}</p>
+            <div class="content-diff-cards" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;">
+                {% for target in compareTargets %}
+                    <div class="content-diff-card" style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; overflow: hidden; transition: border-color 0.2s, box-shadow 0.2s;">
+                        <a href="{{ target.compareUrl }}" class="content-diff-card-link" style="display: block; padding: 20px; text-decoration: none; color: inherit;">
+                            <div class="content-diff-card-header" style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                                <span class="content-diff-card-dot" style="width: 10px; height: 10px; border-radius: 50%; background: {{ target.key == 'production' ? '#059669' : (target.key == 'local' ? '#6b7280' : '#2563eb') }}; flex-shrink: 0;"></span>
+                                <strong class="content-diff-card-label" style="font-size: 16px; color: #111827;">{{ target.label }}</strong>
+                            </div>
+                            <div class="content-diff-card-url light" style="font-size: 12px; color: #6b7280; word-break: break-all; line-height: 1.4;">{{ target.url }}</div>
+                            <span class="content-diff-card-cta btn submit" style="display: inline-block; margin-top: 16px; padding: 8px 16px; font-size: 13px;">{{ target.key == 'local' ? ("Test compare (fake diff)"|t('craft-content-diff')) : ("Compare with {label}"|t('craft-content-diff', { label: target.label })) }}</span>
+                        </a>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="content-diff-empty" style="padding: 24px; background: #fffbeb; border: 1px solid #fcd34d; border-radius: 10px;">
+                <p style="margin: 0; color: #92400e; font-size: 14px; line-height: 1.6;">
+                    {{ "Set Production URL and/or Staging URL in Settings. Current environment (ENVIRONMENT or CRAFT_ENVIRONMENT) controls which compare targets are shown."|t('craft-content-diff') }}
+                </p>
+            </div>
+        {% endif %}
+
+        {% if compareError is defined and compareError %}
+            <div class="content-diff-error" style="margin-top: 24px; padding: 16px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; color: #991b1b;">
+                {{ compareError }}
+            </div>
+        {% endif %}
+
+        {% if compareResult is defined and compareResult is not null %}
+            <hr style="margin: 32px 0; border: none; border-top: 1px solid #e5e7eb;">
+            <div class="content-diff-compare-result">
+                <h2 style="margin: 0 0 8px 0; font-size: 16px; color: #111827;">{{ "Compare result"|t('craft-content-diff') }}{% if compareLabel %} - {{ compareLabel }}{% endif %}</h2>
+                <p class="light" style="margin: 0 0 16px 0; font-size: 13px; color: #6b7280;">{{ "Created, deleted, and updated entries per section. Updated entries show field-by-field changes."|t('craft-content-diff') }}</p>
+                {% for sectionHandle, section in compareResult %}
+                    <details style="margin-bottom: 12px; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
+                        <summary style="padding: 12px 16px; cursor: pointer; font-weight: 600; background: #f9fafb; list-style: none;">
+                            {{ sectionHandle }}
+                            <span style="font-weight: 400; margin-left: 8px;">
+                                <span style="color: #059669;">{{ section.added|length }} created</span>
+                                <span style="color: #dc2626; margin-left: 8px;">{{ section.removed|length }} deleted</span>
+                                <span style="color: #2563eb; margin-left: 8px;">{{ section.changed|length }} updated</span>
+                            </span>
+                        </summary>
+                        <div style="padding: 12px 16px; background: #fff; font-size: 13px;">
+                            <p style="margin: 0 0 12px 0; font-size: 12px; color: #6b7280; font-weight: 500;">{{ "Compared with {env}"|t('craft-content-diff', { env: compareLabel|default('remote') }) }}</p>
+                            {% if section.added|length %}
+                                <p style="margin: 0 0 6px 0;"><strong style="color: #059669;">Created</strong></p>
+                                <ul style="margin: 0 0 16px 0; padding-left: 20px; list-style: none;">
+                                    {% for entry in section.added %}
+                                        <li style="margin-bottom: 10px;">
+                                            <div style="font-size: 12px; color: #6b7280;"><span style="font-weight: 500;">Entry ID:</span> {{ entry.id }} &nbsp; <span style="font-weight: 500;">Entry Slug:</span> {{ entry.slug|default('—') }}</div>
+                                            <span style="color: #059669; font-weight: 600;">Created</span>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            {% endif %}
+                            {% if section.removed|length %}
+                                <p style="margin: 0 0 6px 0;"><strong style="color: #dc2626;">Deleted</strong></p>
+                                <ul style="margin: 0 0 16px 0; padding-left: 20px; list-style: none;">
+                                    {% for entry in section.removed %}
+                                        <li style="margin-bottom: 10px;">
+                                            <div style="font-size: 12px; color: #6b7280;"><span style="font-weight: 500;">Entry ID:</span> {{ entry.id }} &nbsp; <span style="font-weight: 500;">Entry Slug:</span> {{ entry.slug|default('—') }}</div>
+                                            <span style="color: #dc2626; font-weight: 600;">Deleted</span>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            {% endif %}
+                            {% if section.changed|length %}
+                                <p style="margin: 0 0 8px 0;"><strong style="color: #2563eb;">Updated</strong> - field-by-field:</p>
+                                <ul style="margin: 0; padding-left: 20px; list-style: none;">
+                                    {% for uid, diff in section.changed %}
+                                        {% set entryHandle = diff.current.typeHandle|default(sectionHandle) %}
+                                        <li style="margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #e5e7eb;">
+                                            <div style="font-size: 12px; color: #6b7280; margin-bottom: 6px;">
+                                                <span style="font-weight: 500;">Entry ID:</span> {{ diff.current.id }} &nbsp;
+                                                <span style="font-weight: 500;">Entry Slug:</span> {{ diff.current.slug|default('—') }} &nbsp;
+                                                <span style="font-weight: 500;">Entry Title:</span> {{ diff.current.title|default('—') }}
+                                            </div>
+                                            <div class="light" style="font-size: 11px; margin-bottom: 8px;">Type: {{ entryHandle }}</div>
+                                            <ul style="margin: 0; padding-left: 16px; list-style: none;">
+                                                {% for fieldHandle, values in diff.fieldDiffs %}
+                                                    {% set depth = (fieldHandle|split(' — ')|length) - 1 %}
+                                                    {% set indent = depth * 14 %}
+                                                    {% set fieldTypesMap = fieldTypes|default({}) %}
+                                                    {% set leafHandle = (fieldHandle|split(': ')|length > 1) ? (fieldHandle|split(': ')|last|trim) : fieldHandle %}
+                                                    {% set fieldTypeLabel = fieldTypesMap[leafHandle] is defined ? fieldTypesMap[leafHandle] : null %}
+                                                    {% set displayCurrent = values.currentDisplay is defined ? values.currentDisplay : ((values.current is iterable and values.current is not string) ? values.current|json_encode(64) : (values.current|default(''))|truncate(400)) %}
+                                                    {% set displayRemote = values.remoteDisplay is defined ? values.remoteDisplay : ((values.remote is iterable and values.remote is not string) ? values.remote|json_encode(64) : (values.remote|default(''))|truncate(400)) %}
+                                                    <li style="margin-bottom: 10px; margin-left: {{ indent }}px;">
+                                                        <strong style="color: #374151;">Field: {{ fieldHandle }}</strong><span class="light" style="font-size: 11px;">{% if depth > 0 %}(handle: {{ leafHandle }}{% if fieldTypeLabel %}, {{ fieldTypeLabel }}{% endif %}){% elseif fieldTypeLabel %} ({{ fieldTypeLabel }}){% endif %}</span>
+                                                        <div style="margin-top: 4px; display: grid; gap: 6px;">
+                                                            <div style="padding: 8px 10px; background: #fef2f2; border-left: 3px solid #dc2626; border-radius: 4px;">
+                                                                <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #991b1b;">Current ({{ currentEnvironment }})</span>
+                                                                <div style="margin-top: 4px; word-break: break-word; white-space: pre-wrap;">{{ displayCurrent }}</div>
+                                                            </div>
+                                                            <div style="padding: 8px 10px; background: #f0fdf4; border-left: 3px solid #059669; border-radius: 4px;">
+                                                                <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #065f46;">Remote ({{ compareLabel|default('remote') }})</span>
+                                                                <div style="margin-top: 4px; word-break: break-word; white-space: pre-wrap;">{{ displayRemote }}</div>
+                                                            </div>
+                                                        </div>
+                                                    </li>
+                                                {% endfor %}
+                                            </ul>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            {% endif %}
+                            {% if section.added|length == 0 and section.removed|length == 0 and section.changed|length == 0 %}
+                                <p class="light" style="margin: 0;">{{ "No differences."|t('craft-content-diff') }}</p>
+                            {% endif %}
+                        </div>
+                    </details>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+
+    <style>
+        .content-diff-dashboard { max-width: 900px; }
+        .content-diff-card:hover { border-color: #d1d5db; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .content-diff-card-link:hover .content-diff-card-cta { opacity: 0.9; }
+        details summary::-webkit-details-marker { display: none; }
+        details summary::before { content: '▸ '; }
+        details[open] summary::before { content: '▾ '; }
+    </style>
+{% endblock %}

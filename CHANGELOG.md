@@ -1,0 +1,11 @@
+# Release Notes for Craft Content Diff
+
+## 1.0.0 - 2026-02-22
+
+- Initial release.
+- Compare entry content between environments (local, staging, production) from the Control Panel dashboard.
+- Field-level diffs including Matrix and nested blocks; asset/relation IDs shown as labels where possible.
+- Diff endpoint at `/actions/craft-content-diff/diff` (site action URL) with API key auth via `X-Content-Diff-Token` header.
+- Plugin Settings: API key, Production URL, Staging URL, optional HTTP Basic auth for staging/production. All values support literals or env var aliases (e.g. `$CONTENT_DIFF_PRODUCTION_URL`) via Craft’s `EnvAttributeParserBehavior`.
+- Generate API key button in Settings (output shown in a span for copy/paste).
+- Graceful error handling: compare and enrich failures show user message and log; remote fetch failures log and return empty with clear warnings.
