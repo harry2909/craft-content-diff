@@ -23,7 +23,7 @@
     "handle": "craft-content-diff",
     "name": "Craft Content Diff",
     "developer": "roadsterworks",
-    "documentationUrl": "",
+    "documentationUrl": "https://github.com/harry2909/craft-content-diff",
     "class": "roadsterworks\\craftcontentdiff\\CraftContentDiff"
   },
   "scripts": {
