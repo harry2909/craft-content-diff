@@ -1,4 +1,6 @@
 # Craft Content Diff
+<img width="732" height="542" alt="Screenshot 2026-02-22 214417" src="https://github.com/user-attachments/assets/c4a91dc4-6e3a-4965-837d-c50c8f1fbbc2" />
+<img width="794" height="806" alt="Screenshot 2026-02-22 214430" src="https://github.com/user-attachments/assets/d845543e-7cdf-4e63-9465-3b7756fd7f3b" />
 
 Compare entry content between Craft CMS environments (e.g. local, staging, production). View created, deleted, and updated entries with field-level diffs, including Matrix and nested blocks.
 
