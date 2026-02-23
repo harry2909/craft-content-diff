@@ -6,12 +6,12 @@ Compare entry content between Craft CMS environments (e.g. local, staging, produ
 
 ## Requirements
 
-- Craft CMS 5.9.0 or later  
-- PHP 8.2 or later  
+- Craft CMS 5.0.0 or later
+- PHP 8.2 or later
 
 ## Installation
 
-**From the Plugin Store**  
+**From the Plugin Store**
 Open the Plugin Store in the Control Panel, search for “Craft Content Diff”, then install.
 
 **With Composer**
