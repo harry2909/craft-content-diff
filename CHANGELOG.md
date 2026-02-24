@@ -1,8 +1,17 @@
 # Release Notes for Craft Content Diff
 
+## 1.0.2 - 2026-02-23
+
+- Updated Craft CMS version constraint in `composer.json`.
+
+## 1.0.1 - 2026-02-22
+
+- README updates.
+
 ## 1.0.0 - 2026-02-22
 
 - Initial release.
+- Simplified plugin icon (SVG and mask).
 - Compare entry content between environments (local, staging, production) from the Control Panel dashboard.
 - Field-level diffs including Matrix and nested blocks; asset/relation IDs shown as labels where possible.
 - Diff endpoint at `/actions/craft-content-diff/diff` (site action URL) with API key auth via `X-Content-Diff-Token` header.
