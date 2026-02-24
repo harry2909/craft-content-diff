@@ -1,5 +1,9 @@
 # Release Notes for Craft Content Diff
 
+## 1.0.5 - 2026-02-24
+
+- README: Installation section simplified to Composer commands only.
+
 ## 1.0.4 - 2026-02-24
 
 - Updated icons.
