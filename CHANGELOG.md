@@ -1,5 +1,9 @@
 # Release Notes for Craft Content Diff
 
+## 1.0.4 - 2026-02-24
+
+- Updated icons.
+
 ## 1.0.3 - 2026-02-24
 
 - Added required `description` to `composer.json` for Packagist publishing.
