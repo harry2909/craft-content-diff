@@ -1,6 +1,6 @@
 {
   "name": "roadsterworks/craft-content-diff",
-  "version": "1.0.0",
+  "description": "Compare entry content between environments (local, staging, production) from the Craft Control Panel.",
   "type": "craft-plugin",
   "license": "proprietary",
   "support": {

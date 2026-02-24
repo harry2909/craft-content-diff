@@ -1,5 +1,10 @@
 # Release Notes for Craft Content Diff
 
+## 1.0.3 - 2026-02-24
+
+- Added required `description` to `composer.json` for Packagist publishing.
+- Removed `version` from `composer.json` (version is taken from git tags for published packages).
+
 ## 1.0.2 - 2026-02-23
 
 - Updated Craft CMS version constraint in `composer.json`.
