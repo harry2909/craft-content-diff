@@ -23,7 +23,7 @@ Configure in **Control Panel → Content Diff → Settings**. Use the same API k
 
 | Setting | Required | Notes |
 |--------|----------|--------|
-| **API key** | Yes | Secret for the diff endpoint. Generate in Settings or set a literal / env alias (e.g. `$CONTENT_DIFF_API_KEY`). Same value on all envs. |
+| **API key** | Yes | Secret for the diff endpoint. Generate in Settings or set a literal / env alias (e.g. `$CRAFT_CONTENT_DIFF_API_KEY`). Same value on all envs. |
 | **Production URL** | Yes (for staging/dev) | Base URL of production (e.g. `https://example.com`). Literal or env alias. |
 | **Staging URL** | Yes (for production/dev) | Base URL of staging. Literal or env alias. |
 | **HTTP Basic auth** | No | If staging or production is behind server-level HTTP Basic auth, set username and password (literals or env aliases). |

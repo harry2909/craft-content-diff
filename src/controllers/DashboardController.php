@@ -66,9 +66,13 @@ class DashboardController extends Controller
                         $compareError = Craft::t('craft-content-diff', 'Set the {env} URL in Settings.', ['env' => $compareEnv]);
                     } else {
                         [$httpUser, $httpPassword] = $this->getHttpAuthForEnvironment($compareEnv);
-                        $remote = $diffService->fetchRemoteEntriesBySection($baseUrl, $token, $httpUser, $httpPassword);
+                        $envLabel = $compareEnv === self::ENV_PRODUCTION ? 'Production' : 'Staging';
+                        $remote = $diffService->fetchRemoteEntriesBySection($baseUrl, $token, $httpUser, $httpPassword, $compareEnv, $envLabel);
                         if (empty($remote)) {
-                            $compareError = Craft::t('craft-content-diff', 'Could not fetch data from {env}. Check URL, API key, and HTTP auth if the site is behind auth.', ['env' => $compareEnv]);
+                            $specificError = $diffService->getLastFetchError();
+                            $compareError = $specificError !== null && $specificError !== ''
+                                ? $specificError
+                                : Craft::t('craft-content-diff', 'Could not fetch data from {env}. Check URL, API key, and HTTP auth if the site is behind auth.', ['env' => $compareEnv]);
                         } else {
                             $compareLabel = $compareEnv === self::ENV_PRODUCTION ? 'Production' : 'Staging';
                             $compareResult = $diffService->compare($current, $remote);
@@ -91,6 +95,15 @@ class DashboardController extends Controller
             }
         }
 
+        $apiKey = App::parseEnv($this->plugin->getSettings()->apiKey ?? '');
+        $apiKey = is_string($apiKey) ? $apiKey : '';
+        $diffEnv = $currentEnv === self::ENV_DEV ? self::ENV_LOCAL : $currentEnv;
+        $diffJsonParams = ['environment' => $diffEnv];
+        if ($apiKey !== '') {
+            $diffJsonParams['token'] = $apiKey;
+        }
+        $diffJsonUrl = UrlHelper::actionUrl('craft-content-diff/diff', $diffJsonParams);
+
         return $this->renderTemplate('craft-content-diff/dashboard/index', [
             'currentEnvironment' => $currentEnv,
             'compareTargets' => $compareTargets,
@@ -98,7 +111,7 @@ class DashboardController extends Controller
             'compareLabel' => $compareLabel,
             'compareError' => $compareError,
             'fieldTypes' => $fieldTypes,
-            'diffJsonUrl' => UrlHelper::actionUrl('craft-content-diff/diff', ['environment' => 'local']),
+            'diffJsonUrl' => $diffJsonUrl,
         ]);
     }
 
@@ -117,12 +130,44 @@ class DashboardController extends Controller
     }
 
     /**
-     * Current environment: ENVIRONMENT, or CRAFT_ENVIRONMENT as fallback, or dev.
+     * Current environment: ENVIRONMENT or CRAFT_ENVIRONMENT if set; otherwise inferred from
+     * current site URL vs configured Production URL / Staging URL.
      */
     private function getCurrentEnvironment(): string
     {
         $env = App::env('ENVIRONMENT') ?? App::env('CRAFT_ENVIRONMENT');
-        return $env ? strtolower((string) $env) : self::ENV_DEV;
+        if ($env !== null && $env !== '') {
+            return strtolower((string) $env);
+        }
+        $currentUrl = rtrim((string) Craft::$app->getSites()->getCurrentSite()->getBaseUrl(), '/');
+        if ($currentUrl === '') {
+            return self::ENV_DEV;
+        }
+        $settings = $this->plugin->getSettings();
+        $productionUrl = is_string($settings->productionUrl ?? null) ? rtrim(App::parseEnv($settings->productionUrl), '/') : '';
+        $stagingUrl = is_string($settings->stagingUrl ?? null) ? rtrim(App::parseEnv($settings->stagingUrl), '/') : '';
+        if ($productionUrl !== '' && $this->urlMatches($currentUrl, $productionUrl)) {
+            return self::ENV_PRODUCTION;
+        }
+        if ($stagingUrl !== '' && $this->urlMatches($currentUrl, $stagingUrl)) {
+            return self::ENV_STAGING;
+        }
+        return self::ENV_DEV;
+    }
+
+    /**
+     * Whether the current site URL is the same environment as the configured URL (same scheme + host).
+     */
+    private function urlMatches(string $currentUrl, string $configuredUrl): bool
+    {
+        $current = parse_url($currentUrl);
+        $configured = parse_url($configuredUrl);
+        if (!is_array($current) || !is_array($configured)) {
+            return false;
+        }
+        $currentHost = ($current['scheme'] ?? '') . '://' . ($current['host'] ?? '');
+        $configuredHost = ($configured['scheme'] ?? '') . '://' . ($configured['host'] ?? '');
+        return $currentHost !== '' && $currentHost === $configuredHost;
     }
 
     /**

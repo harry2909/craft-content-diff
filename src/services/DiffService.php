@@ -16,6 +16,9 @@ class DiffService extends Component
 {
     private const BATCH_SIZE = 100;
 
+    /** @var string|null Last fetch error message for UI when fetch fails */
+    private ?string $lastFetchError = null;
+
     /**
      * Entries grouped by section handle (content only; no dateCreated/dateUpdated).
      *
@@ -223,12 +226,16 @@ class DiffService extends Component
      * @param string $token API key from plugin Settings (same on both environments)
      * @param string|null $httpUser Optional HTTP Basic username (env: CONTENT_DIFF_*_HTTP_USER)
      * @param string|null $httpPassword Optional HTTP Basic password (env: CONTENT_DIFF_*_HTTP_PASSWORD)
+     * @param string $environment Environment to request (local, staging, or production) so the remote’s response reflects it
+     * @param string|null $environmentLabel Label for error messages (e.g. "Production", "Staging")
      * @return array<string, array<int, array>> entries by section, or empty on failure
      */
-    public function fetchRemoteEntriesBySection(string $baseUrl, string $token, ?string $httpUser = null, ?string $httpPassword = null): array
+    public function fetchRemoteEntriesBySection(string $baseUrl, string $token, ?string $httpUser = null, ?string $httpPassword = null, string $environment = 'staging', ?string $environmentLabel = null): array
     {
+        $this->lastFetchError = null;
+
         $baseUrl = rtrim($baseUrl, '/');
-        $path = '/actions/craft-content-diff/diff?environment=local';
+        $path = '/actions/craft-content-diff/diff?environment=' . rawurlencode($environment);
         $url = $baseUrl . $path;
 
         $headers = "User-Agent: Craft-Content-Diff/1.0\r\nX-Content-Diff-Token: " . str_replace(["\r", "\n"], '', $token) . "\r\n";
@@ -251,32 +258,73 @@ class DiffService extends Component
         ]);
         $json = @file_get_contents($url, false, $ctx);
         $responseLine = isset($http_response_header[0]) ? $http_response_header[0] : null;
+        $httpStatus = $this->parseHttpStatus($responseLine);
+        $phpError = error_get_last();
+
         if ($json === false) {
+            $this->lastFetchError = $httpStatus !== null
+                ? 'Remote returned HTTP ' . $httpStatus . '. Check the URL and API key on the remote environment.'
+                : 'Connection failed (timeout, DNS, or URL unreachable). Check the URL and that this server can reach it.';
             Craft::warning('Content Diff: remote fetch failed (no response body).', [
                 'category' => 'craft-content-diff',
-                'url' => $baseUrl . $path,
+                'url' => $url,
                 'httpResponse' => $responseLine,
+                'httpStatus' => $httpStatus,
+                'phpError' => $phpError,
                 'hasHttpAuth' => $hasAuth,
             ]);
             return [];
         }
+
         $data = json_decode($json, true);
         if (!is_array($data) || !isset($data['entriesBySection']) || !is_array($data['entriesBySection'])) {
-            $preview = is_string($json) ? substr(trim($json), 0, 200) : '';
-            $is302 = $responseLine && strpos($responseLine, '302') !== false;
-            $looksLikeLogin = is_string($json) && (str_contains($json, 'Sign In') || str_contains($json, 'login'));
-            $message = ($is302 || $looksLikeLogin)
-                ? 'Content Diff: remote returned redirect/login page instead of JSON. Set the API key in plugin Settings on both environments and ensure X-Content-Diff-Token is forwarded (no proxy stripping).'
-                : 'Content Diff: remote returned invalid response (not JSON or missing entriesBySection).';
-            Craft::warning($message, [
+            $remoteMessage = null;
+            if (is_array($data) && (isset($data['message']) || isset($data['error']))) {
+                $remoteMessage = $data['message'] ?? $data['error'];
+                $remoteMessage = is_string($remoteMessage) ? $remoteMessage : null;
+            }
+            $prefix = $environmentLabel !== null && $environmentLabel !== '' ? $environmentLabel . ' returned: ' : 'Remote returned: ';
+            $this->lastFetchError = $remoteMessage !== null
+                ? $prefix . $remoteMessage
+                : 'Remote returned invalid response (not JSON or missing data). Check the URL and API key on the remote environment.';
+            $preview = is_string($json) ? substr(trim($json), 0, 500) : '';
+            Craft::warning('Content Diff: remote returned invalid or error response.', [
                 'category' => 'craft-content-diff',
-                'url' => $baseUrl . $path,
+                'url' => $url,
                 'httpResponse' => $responseLine,
+                'httpStatus' => $httpStatus,
                 'responsePreview' => $preview,
+                'remoteMessage' => $remoteMessage,
             ]);
             return [];
         }
+
+        $this->lastFetchError = null;
         return $data['entriesBySection'];
+    }
+
+    /**
+     * Returns the last fetch error message (for UI). Clears it after reading.
+     */
+    public function getLastFetchError(): ?string
+    {
+        $err = $this->lastFetchError;
+        $this->lastFetchError = null;
+        return $err;
+    }
+
+    /**
+     * Parses HTTP status code from response line (e.g. "HTTP/1.1 401 Unauthorized" -> 401).
+     */
+    private function parseHttpStatus(?string $responseLine): ?int
+    {
+        if ($responseLine === null || $responseLine === '') {
+            return null;
+        }
+        if (preg_match('/^HTTP\/\d\.\d\s+(\d+)/', $responseLine, $m)) {
+            return (int) $m[1];
+        }
+        return null;
     }
 
     /**

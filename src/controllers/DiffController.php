@@ -54,7 +54,7 @@ class DiffController extends Controller
         if ($apiKey === '') {
             Craft::$app->getResponse()->setStatusCode(401);
             $hint = str_starts_with((string)($settings->apiKey ?? ''), '$')
-                ? ' API key is set to an env alias (e.g. $CONTENT_DIFF_API_KEY) but that env var is not set or not loaded. Add it to .env on this environment.'
+                ? ' API key is set to an env alias (e.g. $CRAFT_CONTENT_DIFF_API_KEY) but that env var is not set or not loaded. Add it to .env on this environment.'
                 : ' API key is not set in plugin Settings on this environment.';
             return $this->asJson([
                 'error' => 'Unauthorized',
@@ -73,7 +73,7 @@ class DiffController extends Controller
         if ($token !== $apiKey) {
             Craft::$app->getResponse()->setStatusCode(401);
             $hint = str_starts_with((string)($settings->apiKey ?? ''), '$')
-                ? ' The token you sent does not match the value of the env var. Check .env (e.g. CONTENT_DIFF_API_KEY) and use that exact value in the header or ?token=.'
+                ? ' The token you sent does not match the value of the env var. Check .env (e.g. CRAFT_CONTENT_DIFF_API_KEY) and use that exact value in the header or ?token=.'
                 : ' The token you sent does not match the API key in plugin Settings on this environment.';
             return $this->asJson([
                 'error' => 'Unauthorized',
