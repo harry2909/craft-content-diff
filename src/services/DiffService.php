@@ -239,8 +239,10 @@ class DiffService extends Component
         $url = $baseUrl . $path;
 
         $headers = "User-Agent: Craft-Content-Diff/1.0\r\nX-Content-Diff-Token: " . str_replace(["\r", "\n"], '', $token) . "\r\n";
-        if (is_string($httpUser) && $httpUser !== '' && is_string($httpPassword) && $httpPassword !== '') {
-            $headers .= "Authorization: Basic " . base64_encode($httpUser . ':' . $httpPassword) . "\r\n";
+        $authUser = is_string($httpUser) ? $httpUser : '';
+        $authPass = is_string($httpPassword) ? $httpPassword : '';
+        if ($authUser !== '' && $authPass !== '') {
+            $headers .= "Authorization: Basic " . base64_encode($authUser . ':' . $authPass) . "\r\n";
         }
 
         $ctx = stream_context_create([
@@ -250,7 +252,6 @@ class DiffService extends Component
                 'header' => $headers,
             ],
         ]);
-        $hasAuth = is_string($httpUser) && $httpUser !== '' && is_string($httpPassword) && $httpPassword !== '';
         Craft::info('Content Diff: fetching remote. url=' . $url, 'craft-content-diff');
         $json = @file_get_contents($url, false, $ctx);
         $responseLine = isset($http_response_header[0]) ? $http_response_header[0] : null;
@@ -429,7 +430,10 @@ class DiffService extends Component
         if (is_array($a) && is_array($b)) {
             return json_encode($a) !== json_encode($b);
         }
-        return (string)$a !== (string)$b;
+        if (is_array($a) || is_array($b)) {
+            return true;
+        }
+        return (string) $a !== (string) $b;
     }
 
     /**
@@ -467,13 +471,15 @@ class DiffService extends Component
         for ($i = 0; $i < $maxIndex; $i++) {
             $cBlock = $currentBlocks[$i] ?? null;
             $rBlock = $remoteBlocks[$i] ?? null;
-            $cType = is_array($cBlock) ? ($cBlock['type'] ?? '?') : '?';
-            $rType = is_array($rBlock) ? ($rBlock['type'] ?? '?') : '?';
+            $cTypeRaw = is_array($cBlock) ? ($cBlock['type'] ?? '?') : '?';
+            $rTypeRaw = is_array($rBlock) ? ($rBlock['type'] ?? '?') : '?';
+            $cType = is_string($cTypeRaw) ? $cTypeRaw : (is_scalar($cTypeRaw) ? (string) $cTypeRaw : '?');
+            $rType = is_string($rTypeRaw) ? $rTypeRaw : (is_scalar($rTypeRaw) ? (string) $rTypeRaw : '?');
             $blockNum = $i + 1;
             if ($cType !== $rType) {
                 $out["{$fieldHandle} — Block {$blockNum} (type)"] = [
-                    'current' => $cType,
-                    'remote' => $rType,
+                    'current' => $cTypeRaw,
+                    'remote' => $rTypeRaw,
                 ];
             }
             $cFields = is_array($cBlock) && isset($cBlock['fields']) && is_array($cBlock['fields']) ? $cBlock['fields'] : [];
@@ -566,11 +572,13 @@ class DiffService extends Component
         $assets = Asset::find()->id($ids)->siteId($siteId)->all();
         $byId = [];
         foreach ($assets as $asset) {
-            $byId[$asset->id] = $asset->filename;
+            $name = $asset->filename ?? (string) $asset->id;
+            $byId[$asset->id] = is_string($name) ? $name : (string) $asset->id;
         }
         $parts = [];
         foreach ($ids as $id) {
-            $parts[] = isset($byId[$id]) ? $byId[$id] . ' (ID: ' . $id . ')' : 'ID: ' . $id;
+            $label = isset($byId[$id]) ? $byId[$id] : null;
+            $parts[] = $label !== null ? $label . ' (ID: ' . $id . ')' : 'ID: ' . $id;
         }
         return implode(', ', $parts);
     }

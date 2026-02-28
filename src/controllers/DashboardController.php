@@ -59,8 +59,8 @@ class DashboardController extends Controller
                     $compareResult = $diffService->getFakeCompareResult($current);
                 } else {
                     $baseUrl = $this->getTargetUrlForEnvironment($compareEnv);
-                    $token = App::parseEnv($this->plugin->getSettings()->apiKey ?? '');
-                    if (!is_string($token) || $token === '') {
+                    $token = $this->plugin->settingsService->getResolvedApiKey();
+                    if ($token === '') {
                         $compareError = Craft::t('craft-content-diff', 'Set the API key in plugin Settings on both environments to compare with {env}.', ['env' => $compareEnv]);
                     } elseif ($baseUrl === '') {
                         $compareError = Craft::t('craft-content-diff', 'Set the {env} URL in Settings.', ['env' => $compareEnv]);
@@ -95,8 +95,7 @@ class DashboardController extends Controller
             }
         }
 
-        $apiKey = App::parseEnv($this->plugin->getSettings()->apiKey ?? '');
-        $apiKey = is_string($apiKey) ? $apiKey : '';
+        $apiKey = $this->plugin->settingsService->getResolvedApiKey();
         $diffEnv = $currentEnv === self::ENV_DEV ? self::ENV_LOCAL : $currentEnv;
         $diffJsonParams = ['environment' => $diffEnv];
         if ($apiKey !== '') {
@@ -143,9 +142,8 @@ class DashboardController extends Controller
         if ($currentUrl === '') {
             return self::ENV_DEV;
         }
-        $settings = $this->plugin->getSettings();
-        $productionUrl = is_string($settings->productionUrl ?? null) ? rtrim(App::parseEnv($settings->productionUrl), '/') : '';
-        $stagingUrl = is_string($settings->stagingUrl ?? null) ? rtrim(App::parseEnv($settings->stagingUrl), '/') : '';
+        $productionUrl = $this->plugin->settingsService->getResolvedProductionUrl();
+        $stagingUrl = $this->plugin->settingsService->getResolvedStagingUrl();
         if ($productionUrl !== '' && $this->urlMatches($currentUrl, $productionUrl)) {
             return self::ENV_PRODUCTION;
         }
@@ -233,15 +231,14 @@ class DashboardController extends Controller
      */
     private function getHttpAuthForEnvironment(string $environment): array
     {
-        $settings = $this->plugin->getSettings();
         if ($environment === self::ENV_PRODUCTION) {
-            $user = App::parseEnv($settings->productionHttpUser ?? '');
-            $pass = App::parseEnv($settings->productionHttpPassword ?? '');
+            $user = $this->plugin->settingsService->getResolvedProductionHttpUser();
+            $pass = $this->plugin->settingsService->getResolvedProductionHttpPassword();
         } else {
-            $user = App::parseEnv($settings->stagingHttpUser ?? '');
-            $pass = App::parseEnv($settings->stagingHttpPassword ?? '');
+            $user = $this->plugin->settingsService->getResolvedStagingHttpUser();
+            $pass = $this->plugin->settingsService->getResolvedStagingHttpPassword();
         }
-        return (is_string($user) && $user !== '' && is_string($pass) && $pass !== '')
+        return ($user !== '' && $pass !== '')
             ? [$user, $pass]
             : [null, null];
     }
@@ -251,9 +248,8 @@ class DashboardController extends Controller
      */
     private function getTargetUrlForEnvironment(string $environment): string
     {
-        $settings = $this->plugin->getSettings();
-        $url = $environment === self::ENV_PRODUCTION ? $settings->productionUrl : $settings->stagingUrl;
-        $url = is_string($url) ? App::parseEnv($url) : '';
-        return $url !== '' ? rtrim($url, '/') : '';
+        return $environment === self::ENV_PRODUCTION
+            ? $this->plugin->settingsService->getResolvedProductionUrl()
+            : $this->plugin->settingsService->getResolvedStagingUrl();
     }
 }

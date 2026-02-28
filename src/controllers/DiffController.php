@@ -3,7 +3,6 @@
 namespace roadsterworks\craftcontentdiff\controllers;
 
 use Craft;
-use craft\helpers\App;
 use craft\web\Controller;
 use yii\web\Response;
 use roadsterworks\craftcontentdiff\CraftContentDiff;
@@ -44,9 +43,9 @@ class DiffController extends Controller
      */
     public function actionIndex(): Response|string
     {
-        $settings = CraftContentDiff::getInstance()->getSettings();
-        $apiKey = App::parseEnv($settings->apiKey ?? '');
-        $apiKey = is_string($apiKey) ? $apiKey : '';
+        $plugin = CraftContentDiff::getInstance();
+        $settings = $plugin->getSettings();
+        $apiKey = $plugin->settingsService->getResolvedApiKey();
         $token = Craft::$app->getRequest()->getHeaders()->get('X-Content-Diff-Token')
             ?? Craft::$app->getRequest()->getQueryParam('token');
         $token = is_string($token) ? $token : '';
@@ -110,9 +109,9 @@ class DiffController extends Controller
         if ($environment === self::ENV_LOCAL) {
             return rtrim(Craft::$app->getSites()->getCurrentSite()->getBaseUrl(), '/');
         }
-        $settings = CraftContentDiff::getInstance()->getSettings();
-        $url = $environment === self::ENV_PRODUCTION ? $settings->productionUrl : $settings->stagingUrl;
-        $url = is_string($url) ? App::parseEnv($url) : '';
-        return $url !== '' ? rtrim($url, '/') : '';
+        $plugin = CraftContentDiff::getInstance();
+        return $environment === self::ENV_PRODUCTION
+            ? $plugin->settingsService->getResolvedProductionUrl()
+            : $plugin->settingsService->getResolvedStagingUrl();
     }
 }

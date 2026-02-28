@@ -1,5 +1,11 @@
 # Release Notes for Craft Content Diff
 
+## 1.0.9 - 2026-02-28
+
+- **Compare fix:** Resolved "Array to string conversion" when comparing: block/Matrix type labels and HTTP Basic auth are coerced to strings; `valueChanged()` no longer casts arrays to string when one side is array and the other is not; asset filename in labels is always string.
+- **Settings:** Resolved values (API key, URLs, HTTP auth) now use `App::env()` for known env vars (e.g. `CRAFT_CONTENT_DIFF_API_KEY`) with fallback to stored settings. Resolution logic moved into `SettingsService`.
+- **Docs:** README notes env resolution via `App::env()` and that HTTP Basic auth can be left blank when not used.
+
 ## 1.0.8 - 2026-02-28
 
 - **Logging fix**: All `Craft::error()` / `Craft::info()` calls now pass the category as the string `'craft-content-diff'` (not an array). Fixes `strpos(): Argument #1 ($haystack) must be of type string, array given` in Yii log Target when a compare fetch failed.
