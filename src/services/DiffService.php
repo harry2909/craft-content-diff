@@ -251,28 +251,17 @@ class DiffService extends Component
             ],
         ]);
         $hasAuth = is_string($httpUser) && $httpUser !== '' && is_string($httpPassword) && $httpPassword !== '';
-        Craft::info('Content Diff: fetching remote.', [
-            'category' => 'craft-content-diff',
-            'url' => $baseUrl . $path,
-            'hasHttpAuth' => $hasAuth,
-        ]);
+        Craft::info('Content Diff: fetching remote. url=' . $url, 'craft-content-diff');
         $json = @file_get_contents($url, false, $ctx);
         $responseLine = isset($http_response_header[0]) ? $http_response_header[0] : null;
         $httpStatus = $this->parseHttpStatus($responseLine);
-        $phpError = error_get_last();
 
         if ($json === false) {
             $this->lastFetchError = $httpStatus !== null
-                ? 'Remote returned HTTP ' . $httpStatus . '. Check the URL and API key on the remote environment.'
-                : 'Connection failed (timeout, DNS, or URL unreachable). Check the URL and that this server can reach it.';
-            Craft::warning('Content Diff: remote fetch failed (no response body).', [
-                'category' => 'craft-content-diff',
-                'url' => $url,
-                'httpResponse' => $responseLine,
-                'httpStatus' => $httpStatus,
-                'phpError' => $phpError,
-                'hasHttpAuth' => $hasAuth,
-            ]);
+                ? 'Remote returned HTTP ' . $httpStatus . '. Check the URL and API key on the remote environment. If the site is behind Cloudflare or a WAF, see the README (Cloudflare section).'
+                : 'Connection failed (timeout, DNS, or URL unreachable). Check the URL and that this server can reach it. If the site is behind Cloudflare or a WAF, see the README (Cloudflare section).';
+            // Second arg must be category string; passing an array causes Yii log Target strpos() to fail
+            Craft::error('Content Diff: remote fetch failed. url=' . $url . ' httpStatus=' . ($httpStatus ?? 'null'), 'craft-content-diff');
             return [];
         }
 
@@ -286,16 +275,8 @@ class DiffService extends Component
             $prefix = $environmentLabel !== null && $environmentLabel !== '' ? $environmentLabel . ' returned: ' : 'Remote returned: ';
             $this->lastFetchError = $remoteMessage !== null
                 ? $prefix . $remoteMessage
-                : 'Remote returned invalid response (not JSON or missing data). Check the URL and API key on the remote environment.';
-            $preview = is_string($json) ? substr(trim($json), 0, 500) : '';
-            Craft::warning('Content Diff: remote returned invalid or error response.', [
-                'category' => 'craft-content-diff',
-                'url' => $url,
-                'httpResponse' => $responseLine,
-                'httpStatus' => $httpStatus,
-                'responsePreview' => $preview,
-                'remoteMessage' => $remoteMessage,
-            ]);
+                : 'Remote returned invalid response (not JSON or missing data). Check the URL and API key on the remote environment. If the site is behind Cloudflare or a WAF, see the README (Cloudflare section).';
+            Craft::error('Content Diff: remote returned invalid or error response. url=' . $url . ' httpStatus=' . ($httpStatus ?? 'null'), 'craft-content-diff');
             return [];
         }
 

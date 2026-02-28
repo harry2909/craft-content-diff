@@ -30,6 +30,18 @@ Configure in **Control Panel → Content Diff → Settings**. Use the same API k
 
 Set **ENVIRONMENT** (or **CRAFT_ENVIRONMENT**) to `dev`, `staging`, or `production` so the dashboard shows the right compare targets.
 
+## Cloudflare (or similar WAF)
+
+Compare uses **server-to-server** requests (no browser, no cookies). If production or staging is behind **Cloudflare** (or another WAF), it may block or challenge those requests and the compare will fail with a connection or invalid-response error.
+
+**Fix:** In Cloudflare **Security → WAF → Custom rules**, add a rule that **allows** requests to the diff endpoint.
+
+- Use **URI Path** (not the full URL — the path has no domain, e.g. `/actions/craft-content-diff/diff`).
+- **If** URI Path **contains** `craft-content-diff/diff` (or **equals** `/actions/craft-content-diff/diff`) **and** Request Header `X-Content-Diff-Token` is present  
+- **Then** Skip (or Allow).
+
+That way only requests that send your API key are allowed through; bots without the token are still challenged. You can also allow by path only if the API key is secret.
+
 ## Licence
 
 Proprietary (Craft License). See [LICENSE.md](LICENSE.md).

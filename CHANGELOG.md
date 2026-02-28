@@ -1,6 +1,15 @@
 # Release Notes for Craft Content Diff
 
-## 1.0.6 - 2026-02-24
+## 1.0.8 - 2026-02-28
+
+- **Logging fix**: All `Craft::error()` / `Craft::info()` calls now pass the category as the string `'craft-content-diff'` (not an array). Fixes `strpos(): Argument #1 ($haystack) must be of type string, array given` in Yii log Target when a compare fetch failed.
+
+## 1.0.7 - 2026-02-28
+
+- **README**: Added “Cloudflare (or similar WAF)” section: server-to-server compare requests can be blocked; how to allowlist `/actions/craft-content-diff/diff` (and optionally require `X-Content-Diff-Token`) in Cloudflare WAF.
+- **Compare errors**: Fetch failure messages now point to the README Cloudflare section when connection fails or response is invalid. Logging simplified (Craft `craft-content-diff` category, single-line error).
+
+## 1.0.6 - 2026-02-28
 
 - **Compare errors**: Dashboard now shows the actual failure reason when fetch fails (e.g. remote 401 message, connection timeout). Logging improved with HTTP status, remote message, and PHP/connection errors (category `craft-content-diff`).
 - **View JSON**: Link includes API key as `?token=` when set, so it works when opened from the CP. Diff URL uses the current environment (staging/production/local) instead of always `local`.
