@@ -1,5 +1,13 @@
 # Release Notes for Craft Content Diff
 
+## 1.0.6 - 2026-02-24
+
+- **Compare errors**: Dashboard now shows the actual failure reason when fetch fails (e.g. remote 401 message, connection timeout). Logging improved with HTTP status, remote message, and PHP/connection errors (category `craft-content-diff`).
+- **View JSON**: Link includes API key as `?token=` when set, so it works when opened from the CP. Diff URL uses the current environment (staging/production/local) instead of always `local`.
+- **Remote fetch**: Request to production/staging now sends the correct `?environment=` so the remote’s JSON reflects the right environment label.
+- **Environment detection**: If `ENVIRONMENT` / `CRAFT_ENVIRONMENT` is not set, current environment is inferred by comparing the site URL to the configured Production URL and Staging URL.
+- **Docs**: API key examples use `$CRAFT_CONTENT_DIFF_API_KEY` in settings, README, and 401 hints.
+
 ## 1.0.5 - 2026-02-24
 
 - README: Installation section simplified to Composer commands only.
