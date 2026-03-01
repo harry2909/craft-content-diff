@@ -3,6 +3,7 @@
 ## 1.0.9 - 2026-02-28
 
 - **Compare fix:** Resolved "Array to string conversion" when comparing: block/Matrix type labels and HTTP Basic auth are coerced to strings; `valueChanged()` no longer casts arrays to string when one side is array and the other is not; asset filename in labels is always string.
+- **Compare fix:** Array comparison is now key-order independent (deep compare). Identical field values that differed only by JSON key order (e.g. Color Swatches) no longer show as changed.
 - **Settings:** Resolved values (API key, URLs, HTTP auth) now use `App::env()` for known env vars (e.g. `CRAFT_CONTENT_DIFF_API_KEY`) with fallback to stored settings. Resolution logic moved into `SettingsService`.
 - **Docs:** README notes env resolution via `App::env()` and that HTTP Basic auth can be left blank when not used.
 

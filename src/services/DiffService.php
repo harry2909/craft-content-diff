@@ -420,7 +420,7 @@ class DiffService extends Component
     }
 
     /**
-     * Whether two values differ (deep comparison for arrays).
+     * Whether two values differ (deep comparison for arrays; array key order is ignored).
      */
     private function valueChanged(mixed $a, mixed $b): bool
     {
@@ -428,12 +428,36 @@ class DiffService extends Component
             return false;
         }
         if (is_array($a) && is_array($b)) {
-            return json_encode($a) !== json_encode($b);
+            return !$this->arraysEqualDeep($a, $b);
         }
         if (is_array($a) || is_array($b)) {
             return true;
         }
         return (string) $a !== (string) $b;
+    }
+
+    /**
+     * Deep comparison of two arrays; key order does not matter.
+     */
+    private function arraysEqualDeep(array $a, array $b): bool
+    {
+        if (count($a) !== count($b)) {
+            return false;
+        }
+        foreach ($a as $k => $v) {
+            if (!array_key_exists($k, $b)) {
+                return false;
+            }
+            $bv = $b[$k];
+            if (is_array($v) && is_array($bv)) {
+                if (!$this->arraysEqualDeep($v, $bv)) {
+                    return false;
+                }
+            } elseif ($v !== $bv) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
